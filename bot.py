@@ -1,6 +1,5 @@
 from aiogram import Bot, Dispatcher
-from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
-from aiogram.enums import ParseMode
+from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, Update
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.exceptions import AiogramError
 from config import BOT_TOKEN, WEBHOOK_URL, BASE_SITE
@@ -29,7 +28,15 @@ async def handle_any_message(message: Message):
     )
 
 
+async def feed_update(data):
+    update = Update(**data)
+    await dp.feed_update(bot, update)
+
+
 async def set_webhook():
+    info = await bot.get_webhook_info()
+    if info.url == WEBHOOK_URL:
+        return
     await bot.set_webhook(
         WEBHOOK_URL, 
         allowed_updates=dp.resolve_used_update_types(),
