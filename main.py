@@ -1,19 +1,24 @@
 from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
+from config import  DEBUG
 from bot import set_webhook, delete_webhook, send_message, feed_update
 from schemas import MessageSchema
 from logger import logging
+from db.utils import register_tortoise
 
 @asynccontextmanager
 async def lifespan(app_instance: FastAPI):
-    await set_webhook()    
+    if not DEBUG:
+        await set_webhook()
     yield
-    await delete_webhook()  
+    if not DEBUG:
+        await delete_webhook()
 
 
 app = FastAPI(
     lifespan=lifespan
 )
+register_tortoise(app)
 
 @app.get("/ping")
 async def ping():

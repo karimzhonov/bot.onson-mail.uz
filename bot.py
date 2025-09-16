@@ -1,7 +1,10 @@
+import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, Update
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.exceptions import AiogramError
+from db.utils import init_tortoise
+from db.models.telegram import ReferralLink
 from config import BOT_TOKEN, WEBHOOK_URL, BASE_SITE
 from schemas import MessageSchema
 from logger import logging
@@ -15,15 +18,25 @@ async def handle_any_message(message: Message):
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(
-                text="🌐 Перейти в личный кабинет",
+                text="Открыть",
                 web_app=WebAppInfo(url=BASE_SITE)
             )
         ]
     ])
 
+    args = message.text.split()
+
+    if len(args) > 1:
+        ref_id = args[1]
+        ref_exists = await ReferralLink.filter(user_id=message.from_user.id).exists()
+        if not ref_exists:
+            await ReferralLink.create(
+                owner_id=ref_id,
+                user_id=message.from_user.id
+            )
+
     await message.answer(
-        "*Добро пожаловать в Onson Mail!*\n\n"
-        "📦 Карго | ✈️ Туризм",
+        """Onson Mail Group - это динамично развивающаяся компания, предоставляющая профессиональные услуги в сфере грузоперевозок, туризма и консалтинга. Мы стремимся к совершенству, предлагая надежные решения, ориентированные на потребности наших клиентов. Присоединитесь к нам!!!""",
         reply_markup=kb
     )
 
@@ -57,3 +70,12 @@ async def send_message(message: MessageSchema):
     except AiogramError as e:
         logging.error(f"Ошибка при отправке сообщения: {e}")
         return {'status': 'error'}
+
+
+async def main():
+    await init_tortoise()
+    await dp.start_polling(bot)
+
+
+if __name__ == '__main__':
+    asyncio.run(main())
